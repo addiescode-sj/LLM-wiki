@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Obsidian 캐시/워크스페이스 (개인 설정은 제외)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/main.js
+.obsidian/plugins/*/styles.css
+.obsidian/plugins/*/manifest.json
+
+# 임시 파일
+*.tmp
+*.swp
+*.bak
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# 로컬 전용 노트 (팀 공유 제외)
+inbox/
+.local/
+
+# 시스템 로그
+/tmp/
+
+# 에디터
+.vscode/
+.idea/

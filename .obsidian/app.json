@@ -1,0 +1,23 @@
+{
+  "legacyEditor": false,
+  "livePreview": true,
+  "defaultViewMode": "source",
+  "vimMode": false,
+  "showLineNumber": true,
+  "foldHeading": true,
+  "foldIndent": true,
+  "showUnsupportedFiles": false,
+  "newFileFolderPath": "inbox",
+  "newFileLocation": "folder",
+  "attachmentFolderPath": "raw/assets",
+  "promptDelete": true,
+  "trashOption": "local",
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "readableLineLength": true,
+  "strictLineBreaks": false,
+  "showFrontmatter": true,
+  "spellcheck": false,
+  "spellcheckLanguages": ["ko"],
+  "theme": "obsidian"
+}

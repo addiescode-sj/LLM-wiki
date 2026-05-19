@@ -1,0 +1,96 @@
+name: Wiki Lint
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - 'raw/**'
+
+jobs:
+  lint:
+    name: Wiki Quality Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: YAML Frontmatter Check
+        run: |
+          echo "=== YAML 프론트매터 검증 ==="
+          ERRORS=0
+          REQUIRED_FIELDS=("title" "summary" "tags" "type" "created" "status")
+
+          for f in wiki/*.md; do
+            # index.md, log.md, lint-report.md 스킵
+            basename_f=$(basename "$f")
+            [[ "$basename_f" == "index.md" || "$basename_f" == "log.md" || "$basename_f" == "lint-report.md" ]] && continue
+
+            for field in "${REQUIRED_FIELDS[@]}"; do
+              if ! grep -q "^${field}:" "$f" 2>/dev/null; then
+                echo "ERROR: $f — 필드 누락: $field"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+          done
+
+          if [[ $ERRORS -gt 0 ]]; then
+            echo "총 ${ERRORS}개 오류 발견"
+            exit 1
+          fi
+          echo "YAML 검증 통과"
+
+      - name: Orphan Link Check
+        run: |
+          echo "=== 고아 wikilink 검사 ==="
+          WARNINGS=0
+
+          # 모든 위키 슬러그 수집
+          SLUGS=()
+          for f in wiki/*.md; do
+            SLUGS+=("$(basename "$f" .md)")
+          done
+
+          for f in wiki/*.md; do
+            while IFS= read -r link; do
+              slug=$(echo "$link" | sed 's/\[\[//; s/\]\].*//; s/|.*//')
+              found=false
+              for s in "${SLUGS[@]}"; do
+                [[ "$s" == "$slug" ]] && found=true && break
+              done
+              if [[ "$found" == "false" ]]; then
+                echo "WARN: 고아 링크 [[${slug}]] in $(basename "$f")"
+                WARNINGS=$((WARNINGS + 1))
+              fi
+            done < <(grep -oE '\[\[[^\]]+\]\]' "$f" 2>/dev/null || true)
+          done
+
+          echo "경고: ${WARNINGS}개"
+
+      - name: Index Coverage Check
+        run: |
+          echo "=== index.md 커버리지 검사 ==="
+          MISSING=0
+
+          for f in wiki/*.md; do
+            slug=$(basename "$f" .md)
+            [[ "$slug" == "index" || "$slug" == "log" || "$slug" == "lint-report" ]] && continue
+
+            if ! grep -q "$slug" wiki/index.md 2>/dev/null; then
+              echo "WARN: index.md 미등록 — $slug"
+              MISSING=$((MISSING + 1))
+            fi
+          done
+
+          echo "미등록 페이지: ${MISSING}개"
+
+      - name: Log Transaction Check
+        run: |
+          echo "=== log.md 트랜잭션 확인 ==="
+          if [[ ! -f wiki/log.md ]]; then
+            echo "ERROR: wiki/log.md 없음"
+            exit 1
+          fi
+          echo "log.md 존재 확인"
+          tail -20 wiki/log.md

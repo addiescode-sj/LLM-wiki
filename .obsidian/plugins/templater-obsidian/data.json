@@ -1,0 +1,23 @@
+{
+  "command_timeout": 5,
+  "enable_folder_templates": true,
+  "enable_system_commands": false,
+  "folder_templates": [
+    {
+      "folder": "wiki",
+      "template": "_templates/concept.md"
+    },
+    {
+      "folder": "wiki/decisions",
+      "template": "_templates/decision.md"
+    },
+    {
+      "folder": "wiki/meetings",
+      "template": "_templates/meeting.md"
+    }
+  ],
+  "syntax_highlighting": true,
+  "auto_jump_to_cursor": true,
+  "trigger_on_file_creation": true,
+  "templates_folder": "_templates"
+}
