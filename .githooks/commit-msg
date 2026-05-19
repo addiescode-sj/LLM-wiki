@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# =============================================================================
+# commit-msg — Validate commit messages against the LLM Wiki convention.
+# See CLAUDE.md §8 for the full spec.
+#
+# Install:  ./scripts/setup-hooks.sh   (sets core.hooksPath = .githooks)
+# =============================================================================
+set -euo pipefail
+
+MSG_FILE="${1:?missing commit message file}"
+MSG="$(cat "$MSG_FILE")"
+FIRST_LINE="$(printf '%s\n' "$MSG" | sed -n '1p')"
+
+# Skip auto-generated commits (merge / revert / fixup / squash / amend).
+case "$FIRST_LINE" in
+  "Merge "*|"Revert "*|"fixup!"*|"squash!"*|"amend!"*) exit 0 ;;
+esac
+
+# Skip if message is empty (git aborts on its own).
+[[ -z "$FIRST_LINE" ]] && exit 0
+
+red()   { printf '\033[31m%s\033[0m\n' "$*" >&2; }
+amber() { printf '\033[33m%s\033[0m\n' "$*" >&2; }
+
+TYPES='feat|fix|docs|refactor|chore|raw|wiki|publish|test'
+HEADER_RE="^(${TYPES})(\([a-z0-9._/-]+\))?: .{1,72}$"
+
+if ! printf '%s' "$FIRST_LINE" | grep -Eq "$HEADER_RE"; then
+  red "✗ commit-msg: header does not match convention."
+  amber "  expected: <type>(<scope>?): <subject>   (subject ≤72 chars)"
+  amber "  types:    ${TYPES}"
+  amber "  got:      ${FIRST_LINE}"
+  amber "  see CLAUDE.md §8 for details and examples."
+  exit 1
+fi
+
+# Detect wiki page changes (exclude agent-managed ledgers).
+WIKI_CHANGED="$(git diff --cached --name-only \
+  | grep -E '^wiki/.*\.md$' \
+  | grep -vE '^wiki/(log|lint-report)\.md$' \
+  || true)"
+
+if [[ -n "$WIKI_CHANGED" ]]; then
+  if ! printf '%s' "$MSG" | grep -Eq '\[bump:(major|minor|patch|skip)\]'; then
+    red "✗ commit-msg: wiki/ pages changed but no [bump:LEVEL] marker found."
+    amber "  add one of: [bump:major] [bump:minor] [bump:patch] [bump:skip]"
+    amber "  changed files:"
+    while IFS= read -r f; do amber "    - $f"; done <<< "$WIKI_CHANGED"
+    amber "  see CLAUDE.md §8-1 for which level to pick."
+    exit 1
+  fi
+
+  # Heuristic: warn (do not block) on renames/deletes without major.
+  RENAMED_OR_DELETED="$(git diff --cached --name-status \
+    | awk '$1 ~ /^(R|D)/ && $0 ~ /wiki\// && $0 !~ /wiki\/(log|lint-report)\.md/' \
+    || true)"
+  if [[ -n "$RENAMED_OR_DELETED" ]] && ! printf '%s' "$MSG" | grep -q '\[bump:major\]'; then
+    amber "⚠ commit-msg: detected slug rename/delete in wiki/ but bump is not 'major'."
+    amber "  consumer repos pinned to older tags may break. Consider [bump:major]."
+  fi
+fi
+
+exit 0

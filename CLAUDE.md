@@ -100,3 +100,57 @@ status: draft | reviewed | stable
 - [ ] `wiki/log.md`에 인입 기록 존재
 - [ ] `lint` 스크립트 통과 (0 오류)
 - [ ] 최소 1명 팀원 리뷰 승인
+
+---
+
+## 8. 커밋 컨벤션 (필수)
+
+모든 커밋은 아래 포맷을 따른다. 사용자가 LLM에게 `commit` 또는 `커밋해`라고
+지시하면 이 컨벤션에 맞춰 메시지를 **반드시** 생성한 뒤 커밋해야 한다.
+`.githooks/commit-msg` 훅이 규칙을 강제하므로, 어긴 커밋은 거부된다.
+
+### 8-1. 메시지 포맷
+
+```
+<type>(<scope>): <subject> [bump:<level>]
+
+<body (선택)>
+```
+
+- **type** (필수): `feat | fix | docs | refactor | chore | raw | wiki | publish | test`
+- **scope** (선택): 영향 영역 (예: `ingest`, `lint`, `adr`, 페이지 슬러그)
+- **subject** (필수): 명령형, 마침표 없음, **72자 이내**
+- **bump marker** (조건부 필수): `wiki/` 페이지(`log.md`, `lint-report.md` 제외)가
+  변경된 커밋이면 아래 중 하나를 **반드시** 포함:
+  - `[bump:patch]` — 기존 페이지 내용 갱신 (스키마/슬러그 동일)
+  - `[bump:minor]` — 신규 페이지 추가 (하위 호환)
+  - `[bump:major]` — 기존 페이지 슬러그 **삭제/이름 변경** (컨슈머 깨짐)
+  - `[bump:skip]` — 발행 불필요 (예: 오타 수정 후 별도 릴리즈 원치 않을 때)
+
+> bump 마커 결정 시 우선순위: **major > minor > patch > skip**.
+> 하나의 커밋에 슬러그 변경이 섞여 있으면 무조건 `major`다.
+
+### 8-2. 예시
+
+```
+wiki(transformer): add attention mechanism page [bump:minor]
+fix(lint): handle empty wiki/ dir in YAML check
+raw: ingest karpathy llm-wiki article
+docs(adr): record submodule distribution decision
+wiki: rename llm-wiki-pattern to llm-wiki-overview [bump:major]
+chore(hooks): install commit-msg validator
+```
+
+### 8-3. LLM 지시 매핑
+
+사용자가 `commit` 또는 `커밋해`라고 명령하면 다음 절차를 따른다:
+
+1. `git status` / `git diff --cached`로 스테이지된 변경을 파악한다.
+2. `wiki/*.md` 변경 여부 확인 (단, `log.md`, `lint-report.md`는 제외):
+   - 변경 없음 → bump 마커 생략
+   - 기존 페이지 슬러그 삭제/이름 변경 감지 → `[bump:major]`
+   - 신규 페이지 추가 → `[bump:minor]`
+   - 그 외 내용 수정 → `[bump:patch]`
+3. type/scope/subject를 §8-1 포맷에 맞게 작성한다.
+4. `git commit -m "..."` (멀티라인이면 heredoc) 으로 커밋하고
+   `commit-msg` 훅 결과를 확인한다. 훅이 실패하면 메시지를 고쳐 재커밋한다.
