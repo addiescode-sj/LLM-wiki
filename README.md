@@ -1,130 +1,236 @@
 # LLM Wiki
 
-> Andrej Karpathy의 LLM Wiki 패턴 기반 팀 지식 공유 베이스
+> [🇰🇷 한국어](README.ko.md) | 🇺🇸 English
 
-RAG의 "세션 건망증"을 극복하는 **Ingest-time 컴파일** 방식의 로컬 우선 마크다운 지식 베이스입니다.  
-새 문서가 들어올 때마다 Claude Code가 자동으로 wiki/에 구조화하여 저장합니다.
+[![Latest Wiki Release](https://img.shields.io/github/v/release/addiescode-sj/LLM-wiki?filter=wiki-v*&label=wiki&sort=semver&color=blue)](https://github.com/addiescode-sj/LLM-wiki/releases/latest)
+[![Publish](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml/badge.svg?branch=main)](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml)
+
+> A team knowledge base built on Andrej Karpathy's LLM Wiki pattern.
+
+A local-first markdown knowledge base that overcomes RAG's "session amnesia" through **ingest-time compilation**. Whenever a new document arrives, Claude Code automatically structures and stores it under `wiki/`.
 
 ---
 
-## 빠른 시작
+## Quick Start
 
-### 1. 사전 요구사항
+### 1. Prerequisites
 
 ```bash
-# Claude Code CLI 설치 확인
+# Verify Claude Code CLI is installed
 claude --version
 
-# Obsidian에서 이 폴더를 Vault로 열기
-# → Community Plugins에서 아래 3개 설치 및 활성화:
+# Open this folder as an Obsidian Vault
+# → Install and enable the following Community Plugins:
 #   - Obsidian Git
 #   - Dataview
 #   - Templater
 ```
 
-### 2. 저장소 초기화 (첫 실행 시 1회)
+### 2. Initialize the repository (run once on first use)
 
 ```bash
 ./scripts/ingest.sh --init
+./scripts/setup-hooks.sh    # install commit-msg validator (see CLAUDE.md §8)
 ```
 
-### 3. 지식 추가
+### 3. Add knowledge
 
 ```bash
-# 파일로 추가
+# Add from a file
 ./scripts/ingest.sh raw/articles/my-article.md
 
-# URL로 추가
+# Add from a URL
 ./scripts/ingest.sh --url https://example.com/paper
 
-# inbox/ 전체 일괄 처리
+# Batch process everything in inbox/
 ./scripts/ingest.sh --all-inbox
 ```
 
-### 4. 지식 검색
+### 4. Query knowledge
 
 ```bash
-./scripts/query.sh "Transformer attention 메커니즘이란?"
+./scripts/query.sh "What is the Transformer attention mechanism?"
 
-# 답변을 위키 페이지로 저장
-./scripts/query.sh --save "RAG와 LLM Wiki의 차이점은?"
+# Save the answer as a wiki page
+./scripts/query.sh --save "How does RAG differ from LLM Wiki?"
 ```
 
-### 5. 품질 관리
+### 5. Quality control
 
 ```bash
-./scripts/lint.sh           # 전체 감사
-./scripts/lint.sh --fix     # 자동 수복
-./scripts/freshness.sh      # SHA 정합성 체크
+./scripts/lint.sh           # Full audit
+./scripts/lint.sh --fix     # Auto-repair
+./scripts/freshness.sh      # SHA consistency check
 ```
 
 ---
 
-## 디렉터리 구조
+## Directory Structure
 
 ```
 LLM-wiki/
-├── CLAUDE.md              # 에이전트 헌법 (AI 행동 규칙)
-├── AGENTS.md              # 에이전트 역할 명세
-├── CONTRIBUTING.md        # 기여 가이드
+├── CLAUDE.md              # Agent constitution (AI behavior rules)
+├── AGENTS.md              # Agent role specification
+├── CONTRIBUTING.md        # Contribution guide
 │
-├── raw/                   # ⚠️ 불변 원천 소스 (수정 금지)
-│   ├── articles/          # 웹 클리핑, 블로그 포스트
-│   ├── papers/            # 논문 PDF 요약
-│   ├── videos/            # 유튜브/강의 스크립트
-│   └── meetings/          # 미팅 노트
+├── raw/                   # ⚠️ Immutable source of truth (do not modify)
+│   ├── articles/          # Web clippings, blog posts
+│   ├── papers/            # Paper PDF summaries
+│   ├── videos/            # YouTube/lecture transcripts
+│   └── meetings/          # Meeting notes
 │
-├── wiki/                  # 🤖 AI 단독 유지보수 (읽기 전용으로 탐색)
-│   ├── index.md           # 마스터 인덱스 (에이전트 라우팅용)
-│   ├── log.md             # 트랜잭션 감사 원장
-│   └── *.md               # 컴파일된 위키 페이지
+├── wiki/                  # 🤖 AI-only maintained (humans browse read-only)
+│   ├── index.md           # Master index (for agent routing)
+│   ├── log.md             # Transaction audit ledger
+│   └── *.md               # Compiled wiki pages
 │
-├── _templates/            # 문서 템플릿
+├── _templates/            # Document templates
 │   ├── concept.md
 │   ├── decision.md
 │   └── meeting.md
 │
-├── inbox/                 # 처리 대기 파일 투입함
+├── inbox/                 # Drop-box for pending files
 │
-├── scripts/               # 자동화 스크립트
+├── scripts/               # Automation scripts
 │   ├── ingest.sh          # Ingest Agent
 │   ├── query.sh           # Query Agent
 │   ├── lint.sh            # Lint Agent
-│   ├── freshness.sh       # SHA 정합성 검증
-│   └── async_ingest.sh    # Git hook용 비동기 인입
+│   ├── freshness.sh       # SHA consistency verifier
+│   └── async_ingest.sh    # Async ingest for git hooks
 │
-└── .obsidian/             # Obsidian 설정
+└── .obsidian/             # Obsidian settings
 ```
 
 ---
 
-## Git 자동화
+## Git Automation
 
-`raw/`에 파일을 커밋하면 post-commit 훅이 자동으로 위키 컴파일을 시작합니다.
+Committing a file under `raw/` triggers a post-commit hook that starts wiki compilation automatically.
 
 ```bash
-# 원천 소스 추가 → 커밋만 하면 자동 처리
+# Add a raw source → commit and it's processed automatically
 git add raw/articles/new-article.md
 git commit -m "raw: add new-article.md"
-# → 백그라운드에서 wiki/ 자동 컴파일
-# → 로그: /tmp/llm-wiki-async-ingest.log
+# → wiki/ is compiled in the background
+# → Log: /tmp/llm-wiki-async-ingest.log
 ```
 
 ---
 
-## 팀 협업 워크플로우
+## Personal → Team Knowledge Promotion Policy
+
+> **Core principle**: validate knowledge on a personal branch first, and only promote what is genuinely valuable to the team into `main`.
+
+### Branch Structure
 
 ```
-개인 브랜치 작업          PR 리뷰               팀 공유
-personal/<이름>   →→→   lint 통과 + 리뷰   →→→   main
+main                  ← Team-shared knowledge (protected, verified content only)
+  └── personal/addie  ← Personal knowledge (experiment freely)
+       └── feature/redis-research  ← Topic-specific investigation
 ```
 
-자세한 내용은 [CONTRIBUTING.md](CONTRIBUTING.md) 참조.
+### Promotion Criteria
+
+**Promote** — content the whole team will need repeatedly:
+- Architecture decisions (ADRs), technology choice rationale
+- Troubleshooting records, production incident retrospectives
+- Onboarding essentials (deployment procedures, environment setup)
+- Technical research results (benchmarks, library comparisons)
+
+**Keep on personal branch** — context unrelated to the team:
+- Personal learning notes, book summaries
+- Temporary notes during a specific PR
+- Unverified drafts
+
+### Promotion Workflow (at a glance)
+
+```
+① Add raw/ on a personal branch → commit
+         ↓ (automatic)
+② wiki/ compilation completes
+
+③ Verify lint passes
+   ./scripts/lint.sh
+
+④ Open a PR: personal/<name> → main
+   (fill in the checklist)
+
+⑤ One teammate reviews → Squash Merge
+
+⑥ Accessible to the entire team ✅
+```
+
+### Quick Start — Create a Personal Branch
+
+```bash
+# When starting for the first time
+git checkout -b personal/your-name
+git push -u origin personal/your-name
+```
+
+→ Scenario example: [wiki/promotion-example.md](wiki/promotion-example.md)
+→ Promotion policy details: [decisions/ADR-001-knowledge-promotion-policy.md](decisions/ADR-001-knowledge-promotion-policy.md)
 
 ---
 
-## 아키텍처 참고
+## Distribution (Embedding in Other Repos)
 
-- 위키 패턴 상세: [wiki/llm-wiki-pattern.md](wiki/llm-wiki-pattern.md)
-- 에이전트 규칙: [CLAUDE.md](CLAUDE.md)
-- 에이전트 명세: [AGENTS.md](AGENTS.md)
+The compiled `wiki/` is published to a dedicated `dist` branch so other product repos can embed it as a read-only git submodule. See [decisions/ADR-002-wiki-distribution-submodule.md](decisions/ADR-002-wiki-distribution-submodule.md).
+
+### Automatic publishing (push to `main`)
+
+Every push to `main` that touches `wiki/**` triggers the [Publish Wiki Release](.github/workflows/publish.yml) workflow, which:
+
+1. Runs `scripts/publish.sh` to rebuild the `dist` branch and tag `wiki-vX.Y.Z`.
+2. Creates a corresponding GitHub Release (notes auto-generated from commits since the previous tag).
+3. The README badge updates automatically (shields.io reads the latest release tag).
+
+**Bump level is inferred from the commit message:**
+
+| Marker in commit message | Bump | Use when |
+|--------------------------|------|----------|
+| _(none)_                 | `patch` | Default — content edits, additions |
+| `[bump:minor]`           | `minor` | New pages added (back-compatible) |
+| `[bump:major]`           | `major` | Existing page slugs removed/renamed (breaks consumers) |
+| `[bump:skip]`            | _none_ | Doc-only / non-content change |
+
+You can also trigger a manual release via **Actions → Publish Wiki Release → Run workflow** (choose bump level).
+
+### Manual publishing (local)
+
+```bash
+./scripts/publish.sh patch          # 1.0.0 → 1.0.1
+./scripts/publish.sh minor --push   # 1.0.1 → 1.1.0 + push
+./scripts/publish.sh major --push   # bump + push branch & tag to origin
+```
+
+### Embedding in a consumer repo
+
+```bash
+# Initial embed, pinned to a tag
+git submodule add -b dist <wiki-repo-url> docs/wiki
+git -C docs/wiki checkout wiki-v1.0.0
+git add .gitmodules docs/wiki
+git commit -m "docs: embed LLM wiki @ v1.0.0"
+
+# Later, bump the pinned version
+git -C docs/wiki fetch --tags
+git -C docs/wiki checkout wiki-v1.1.0
+git add docs/wiki && git commit -m "docs: bump LLM wiki to v1.1.0"
+```
+
+Consumers receive only `wiki/` and `manifest.json` — `raw/`, `scripts/`, and workspace metadata are excluded.
+
+---
+
+## Team Collaboration Workflow
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## Architecture References
+
+- Wiki pattern details: [wiki/llm-wiki-pattern.md](wiki/llm-wiki-pattern.md)
+- Agent rules: [CLAUDE.md](CLAUDE.md)
+- Agent specification: [AGENTS.md](AGENTS.md)
