@@ -1,0 +1,119 @@
+name: Publish Wiki Release
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'wiki/**'
+      - 'scripts/publish.sh'
+      - '.github/workflows/publish.yml'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump level'
+        required: true
+        default: 'patch'
+        type: choice
+        options: [patch, minor, major]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-wiki
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history + tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+
+      - name: Configure git author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Determine bump level
+        id: bump
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            LEVEL="${{ inputs.bump }}"
+          else
+            MSG=$(git log -1 --pretty=%B)
+            if [[ "$MSG" == *"[bump:skip]"* ]]; then
+              LEVEL="skip"
+            elif [[ "$MSG" == *"[bump:major]"* ]]; then
+              LEVEL="major"
+            elif [[ "$MSG" == *"[bump:minor]"* ]]; then
+              LEVEL="minor"
+            else
+              LEVEL="patch"
+            fi
+          fi
+          echo "level=$LEVEL" >> "$GITHUB_OUTPUT"
+          echo "Resolved bump level: $LEVEL"
+
+      - name: Publish to dist branch
+        if: steps.bump.outputs.level != 'skip'
+        env:
+          CI: 'true'
+          SKIP_LINT: '1'
+        run: |
+          chmod +x scripts/publish.sh
+          ./scripts/publish.sh ${{ steps.bump.outputs.level }} --push
+
+      - name: Resolve tag
+        if: steps.bump.outputs.level != 'skip'
+        id: tag
+        run: |
+          TAG=$(git tag --list 'wiki-v*' --sort=-v:refname | head -n1)
+          echo "name=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#wiki-v}" >> "$GITHUB_OUTPUT"
+          echo "Tagged: $TAG"
+
+      - name: Generate release notes
+        if: steps.bump.outputs.level != 'skip'
+        id: notes
+        run: |
+          PREV=$(git tag --list 'wiki-v*' --sort=-v:refname | sed -n '2p')
+          {
+            echo "## LLM Wiki ${{ steps.tag.outputs.version }}"
+            echo ""
+            echo "- Source commit: \`${{ github.sha }}\`"
+            echo "- Generated: \`$(date -u +%Y-%m-%dT%H:%M:%SZ)\`"
+            echo ""
+            if [[ -n "$PREV" ]]; then
+              echo "### Changes since $PREV"
+              echo ""
+              git log --pretty=format:'- %s (%h)' "${PREV}..HEAD" -- wiki/ || true
+            else
+              echo "Initial release."
+            fi
+          } > /tmp/release-notes.md
+          echo "path=/tmp/release-notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.level != 'skip'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.tag.outputs.name }}" \
+            --title "LLM Wiki ${{ steps.tag.outputs.version }}" \
+            --notes-file "${{ steps.notes.outputs.path }}" \
+            --target dist
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Publish Result"
+            echo ""
+            echo "- Bump: \`${{ steps.bump.outputs.level }}\`"
+            echo "- Tag: \`${{ steps.tag.outputs.name || 'n/a' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

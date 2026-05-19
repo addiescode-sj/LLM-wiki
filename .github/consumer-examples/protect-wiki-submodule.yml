@@ -1,0 +1,55 @@
+# =============================================================================
+# Drop this file into a CONSUMER repo (the product repo that embeds LLM Wiki as
+# a submodule) at: .github/workflows/protect-wiki-submodule.yml
+#
+# It enforces that the embedded wiki submodule directory is read-only:
+#   - No file changes inside the submodule path (other than the gitlink itself)
+#   - The pinned commit must resolve to a `wiki-vX.Y.Z` tag (no floating HEADs)
+#
+# Adjust SUBMODULE_PATH to match where you mounted the submodule.
+# =============================================================================
+name: Protect Wiki Submodule
+
+on:
+  pull_request:
+    branches: [main]
+
+env:
+  SUBMODULE_PATH: docs/wiki
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Block edits inside the submodule directory
+        run: |
+          # Any path under $SUBMODULE_PATH that is not the gitlink itself is forbidden.
+          BAD=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+                | grep "^${SUBMODULE_PATH}/" || true)
+          if [[ -n "$BAD" ]]; then
+            echo "::error::Edits detected inside read-only wiki submodule:"
+            echo "$BAD"
+            echo ""
+            echo "The wiki is published from its source repo. Open a PR there instead."
+            exit 1
+          fi
+          echo "OK: no file edits inside ${SUBMODULE_PATH}/"
+
+      - name: Verify submodule is pinned to a tagged release
+        run: |
+          cd "$SUBMODULE_PATH"
+          # Find a tag matching the current submodule HEAD.
+          TAG=$(git tag --points-at HEAD --list 'wiki-v*' | head -n1 || true)
+          if [[ -z "$TAG" ]]; then
+            SHA=$(git rev-parse HEAD)
+            echo "::error::Submodule HEAD ($SHA) is not a tagged release (wiki-vX.Y.Z)."
+            echo "Pin to a tag:  git -C ${SUBMODULE_PATH} checkout wiki-vX.Y.Z"
+            exit 1
+          fi
+          echo "OK: submodule pinned to $TAG"
