@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# =============================================================================
+# post-commit — raw/ 변경 시 비동기 인입 트리거
+#
+# 이번 커밋에 raw/ 파일 변경이 포함된 경우, scripts/async_ingest.sh를
+# 백그라운드로 실행해 wiki/를 자동 컴파일한다. 커밋 자체는 차단하지 않는다.
+# =============================================================================
+set -u
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+
+# 마지막 커밋이 raw/ 파일을 건드렸는지 확인
+if ! git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null | grep -q '^raw/'; then
+  exit 0
+fi
+
+ASYNC_SCRIPT="$REPO_ROOT/scripts/async_ingest.sh"
+[[ -x "$ASYNC_SCRIPT" ]] || exit 0
+
+# Detached background execution — terminal blocking and re-entrant hooks 방지
+LOG="/tmp/llm-wiki-async-ingest.log"
+nohup "$ASYNC_SCRIPT" >>"$LOG" 2>&1 </dev/null &
+disown 2>/dev/null || true
+
+echo "[LLM Wiki] raw/ 변경 감지 → 백그라운드 인입 시작 (로그: $LOG)"
+exit 0
