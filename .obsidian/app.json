@@ -18,6 +18,7 @@
   "strictLineBreaks": false,
   "showFrontmatter": true,
   "spellcheck": false,
-  "spellcheckLanguages": ["ko"],
-  "theme": "obsidian"
+  "spellcheckLanguages": [
+    "ko"
+  ]
 }
