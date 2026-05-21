@@ -1,8 +1,8 @@
 {
-  "version": "0.0.1",
-  "tag": "wiki-v0.0.1",
-  "source_commit": "5262e4d856aca67534cf64d037e7787d576060cb",
-  "source_branch": "master",
-  "generated_at": "2026-05-19T01:44:54Z",
+  "version": "0.0.2",
+  "tag": "wiki-v0.0.2",
+  "source_commit": "31bb40a82cde46dbca9dfe04d14fd3a4d48a449e",
+  "source_branch": "main",
+  "generated_at": "2026-05-21T07:55:34Z",
   "page_count": 4
 }
