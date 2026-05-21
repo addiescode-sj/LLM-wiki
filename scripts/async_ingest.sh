@@ -11,20 +11,20 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WIKI_ROOT="$(dirname "$SCRIPT_DIR")"
 RAW_DIR="$WIKI_ROOT/raw"
-LOCK_FILE="/tmp/llm-wiki-ingest.lock"
+LOCK_DIR="/tmp/llm-wiki-ingest.lock.d"
 INGEST_LOG="/tmp/llm-wiki-async-ingest.log"
 
 timestamp() { date '+%Y-%m-%d %H:%M:%S'; }
 
 log() { echo "[$(timestamp)] $1" >> "$INGEST_LOG"; }
 
-# ── flock으로 동시 실행 방지 ──────────────────────────────────────────────
-# 이미 인입 중이면 조용히 종료
-exec 9>"$LOCK_FILE"
-if ! flock -n 9; then
-  log "SKIP: 이미 인입 진행 중 (lock: $LOCK_FILE)"
+# ── mkdir-based atomic lock (macOS/Linux portable) ───────────────────────
+# flock은 macOS 기본 미설치이므로 mkdir의 원자성을 활용한다.
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  log "SKIP: 이미 인입 진행 중 (lock: $LOCK_DIR)"
   exit 0
 fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
 
 log "START: 비동기 인입 시작"
 

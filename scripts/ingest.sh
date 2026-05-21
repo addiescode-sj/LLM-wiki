@@ -112,9 +112,13 @@ cmd_file() {
     exit 1
   fi
 
+  # Resolve to absolute path so the raw/ check below works regardless of
+  # whether the caller passed a relative or absolute path.
+  source_file="$(cd "$(dirname "$source_file")" && pwd)/$(basename "$source_file")"
+
   log_info "파일 인입 시작: $source_file"
 
-  # raw/ 경로가 아닌 경우 복사
+  # raw/ 경로가 아닌 경우에만 raw/articles/로 복사
   if [[ "$source_file" != "$RAW_DIR"/* ]]; then
     local basename
     basename="$(basename "$source_file")"
@@ -124,9 +128,9 @@ cmd_file() {
     source_file="$dest"
   fi
 
-  # SHA 계산
+  # SHA 계산 — §8-4 ADR 트리거와 알고리즘 통일을 위해 git hash-object 사용
   local sha
-  sha="$(shasum -a 256 "$source_file" | cut -c1-16)"
+  sha="$(git hash-object "$source_file" | cut -c1-16)"
 
   log_info "SHA: $sha"
   log_info "Claude Code로 위키 컴파일 시작..."
@@ -142,7 +146,7 @@ cmd_file() {
 3. 선택된 페이지: Synthesize (기존 내용 보존하면서 새 정보 자연스럽게 병합)
 4. 새로운 개념이면: _templates/concept.md 기반으로 신규 페이지 생성
 5. wiki/index.md 테이블에 한 줄 요약 추가/갱신
-6. wiki/log.md에 트랜잭션 기록
+6. wiki/log.md에 트랜잭션 기록 — **반드시 '## 트랜잭션 기록' 섹션 안의 코드블록(\`\`\`...\`\`\`) 마지막 [INDEX] 라인 바로 다음 줄에만** 추가한다. '## 포맷' 섹션, 헤더, 코드블록 바깥에는 절대 끼워넣지 말 것.
 7. YAML 프론트매터의 sources.sha를 '$sha'로 설정" || {
     log_error "Claude Code 실행 실패"
     write_log "ERROR" "$source_file" "N/A" "Claude Code 실행 실패"

@@ -85,7 +85,16 @@ WORKTREE_DIR="$(mktemp -d -t llm-wiki-dist-XXXXXX)"
 cleanup() { git worktree remove --force "$WORKTREE_DIR" 2>/dev/null || rm -rf "$WORKTREE_DIR"; }
 trap cleanup EXIT
 
+# Try to fetch dist from origin so the existence check below works even on
+# fresh CI checkouts that didn't populate origin/dist tracking ref.
+git fetch origin dist:refs/remotes/origin/dist 2>/dev/null || true
+
 if git show-ref --verify --quiet refs/heads/dist; then
+  git worktree add "$WORKTREE_DIR" dist
+elif git show-ref --verify --quiet refs/remotes/origin/dist; then
+  # Remote dist exists (typical CI fresh checkout) — branch off it locally so
+  # the new commit is fast-forward over origin/dist instead of an orphan.
+  git fetch origin dist:dist
   git worktree add "$WORKTREE_DIR" dist
 else
   # First-ever publish: create orphan dist branch.
