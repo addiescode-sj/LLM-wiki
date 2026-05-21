@@ -2,7 +2,6 @@
 
 > 🇰🇷 한국어 | [🇺🇸 English](README.md)
 
-[![Latest Wiki Release](https://img.shields.io/github/v/release/addiescode-sj/LLM-wiki?filter=wiki-v*&label=wiki&sort=semver&color=blue)](https://github.com/addiescode-sj/LLM-wiki/releases/latest)
 [![Publish](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml/badge.svg?branch=main)](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml)
 
 > Andrej Karpathy의 LLM Wiki 패턴 기반 팀 지식 공유 베이스

@@ -1,8 +1,6 @@
 # LLM Wiki
 
 > [🇰🇷 한국어](README.ko.md) | 🇺🇸 English
-
-[![Latest Wiki Release](https://img.shields.io/github/v/release/addiescode-sj/LLM-wiki?filter=wiki-v*&label=wiki&sort=semver&color=blue)](https://github.com/addiescode-sj/LLM-wiki/releases/latest)
 [![Publish](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml/badge.svg?branch=main)](https://github.com/addiescode-sj/LLM-wiki/actions/workflows/publish.yml)
 
 > A team knowledge base built on Andrej Karpathy's LLM Wiki pattern.
