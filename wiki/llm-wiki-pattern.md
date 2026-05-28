@@ -4,10 +4,12 @@ summary: "Ingest-time 컴파일로 RAG 한계를 극복하는 자가 성장형 �
 tags: [llm, ai, architecture, rag, obsidian, knowledge-management]
 type: concept
 created: 2026-05-19T00:00:00+09:00
-last_updated: 2026-05-19T00:00:00+09:00
+last_updated: 2026-05-28T15:30:00+09:00
 sources:
   - path: "raw/articles/llm-wiki-karpathy.md"
     sha: "gdoc-1k8Qh-irUsybmZIHit1MBAnysHsfzPP2TAmAcT3JJhcM"
+  - path: "raw/videos/5uTpUYw8Of4.md"
+    sha: "28d4ad9d897252a7"
 related:
   - "[[index]]"
 status: stable
@@ -148,3 +150,72 @@ status: draft | reviewed | stable
 - `Obsidian` — 로컬 마크다운 IDE/뷰어
 - `Claude Code` — AI 컴파일 엔진
 - `Transactional Outbox Pattern` — 이벤트 정합성 유사 패턴
+
+---
+
+## 사례 연구: LLM Wiki Compiler 실측 효과
+
+한 개발자가 카파시의 개념을 바탕으로 **LLM Wiki Compiler 플러그인**을 구현하여
+측정한 압축률과 토큰 절감 데이터 (raw/videos/5uTpUYw8Of4.md:317-377).
+
+### 컴파일 압축률
+
+| 입력 데이터 | 원본 규모 | 컴파일 결과 | 압축 비율 |
+|------------|----------|------------|----------|
+| 마크다운 문서 | 383개 / 13.1MB | 13개 기사 | **81×** |
+| 회의 녹취록 | 130개 / 122,625줄 | 1개 파일 / 244줄 | **503×** |
+
+> 압축의 원천은 알고리즘이 아닌 LLM의 **의미 추출**이다.
+> 반복·잡담·중복 제거 후 핵심만 남기므로 가능 (raw/videos/5uTpUYw8Of4.md:349-357).
+
+### 토큰 절감 (세션당)
+
+| 항목 | RAG 방식 | LLM Wiki | 감소율 |
+|-----|---------|----------|--------|
+| 세션 초기 컨텍스트 로딩 | 47,000 tokens | 7,700 tokens | **84%** |
+| 질의당 리서치 토큰 | 8,000 tokens | 600 tokens | **84%** |
+
+(raw/videos/5uTpUYw8Of4.md:359-377)
+
+### 비용 손익 분기점
+
+- **초기 컴파일 비용**: $0.60 ~ $13 (모델에 따라)
+- **증분 인입 비용**: $0.30 ~ $1.50 per 신규 문서 세션
+- **손익 분기점**: 첫 번째 세션부터 회수 — 매 세션 47k 토큰을 태우던 비용이
+  7.7k 토큰으로 줄어들므로 즉시 본전 (raw/videos/5uTpUYw8Of4.md:529-561).
+
+---
+
+## 실전 컨텍스트 관리 (Claude Code)
+
+LLM Wiki 도입 이전에도 즉시 적용 가능한 토큰 절감 기법
+(raw/videos/5uTpUYw8Of4.md:465-505).
+
+### 1. `/compact` 명령어
+- 대화가 길어져 컨텍스트가 가득 차면 사용
+- 대화 히스토리를 요약하여 압축 — "연료 탱크의 찌꺼기를 빼고 순수 연료만 남기는" 효과
+
+### 2. `/clear` 명령어
+- 주제가 완전히 바뀔 때 사용
+- 이전 대화의 잔재가 새 작업을 방해하는 것을 차단
+
+### 3. `CLAUDE.md` 길이 최적화
+- 권장 길이: **200 ~ 500줄**
+- 너무 길면 매 세션 컨텍스트 토큰을 과소비
+- 정말 중요한 규칙만 남기고 나머지는 제거
+
+---
+
+## AI의 구조적 약점: 세션 리셋
+
+LLM은 매 질의마다 컨텍스트를 처음부터 다시 로딩하는 구조적 한계가 있다.
+이는 비유적으로 **"매일 아침 기억이 리셋되는 신입 사원"**과 같다 —
+어제 읽은 문서 100장을 오늘 다시 100장 복사해서 읽혀야 한다
+(raw/videos/5uTpUYw8Of4.md:167-209).
+
+이 문제의 RAG 식 해법은 "필요할 때마다 도서관에서 책을 다시 빌리는" 방식이고,
+LLM Wiki 해법은 "미리 책상 위에 요약 노트를 만들어 두는" 방식이다
+(raw/videos/5uTpUYw8Of4.md:295-317).
+
+카파시의 표현: **"지식이 컴파일된 상태로 유지되기 때문에 매번 처음부터 다시 추출할 필요가 없다"**
+(raw/videos/5uTpUYw8Of4.md:309-317).
