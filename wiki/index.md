@@ -17,7 +17,7 @@
 
 | 슬러그 | 제목 | 태그 | 상태 | 마지막 업데이트 |
 |--------|------|------|------|---------------|
-| `llm-wiki-pattern` | Karpathy LLM Wiki 패턴 | #llm #ai #architecture | stable | 2026-05-28 |
+| `llm-wiki-pattern` | Karpathy LLM Wiki 패턴 | #llm #ai #architecture | stable | 2026-05-28 (sha refresh) |
 | `promotion-example` | 지식 격상 워크플로우 예시 | #workflow #knowledge-management | stable | 2026-05-19 |
 
 ---

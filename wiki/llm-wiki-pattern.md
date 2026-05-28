@@ -4,12 +4,12 @@ summary: "Ingest-time 컴파일로 RAG 한계를 극복하는 자가 성장형 �
 tags: [llm, ai, architecture, rag, obsidian, knowledge-management]
 type: concept
 created: 2026-05-19T00:00:00+09:00
-last_updated: 2026-05-28T15:30:00+09:00
+last_updated: 2026-05-28T17:00:00+09:00
 sources:
   - path: "raw/articles/llm-wiki-karpathy.md"
     sha: "gdoc-1k8Qh-irUsybmZIHit1MBAnysHsfzPP2TAmAcT3JJhcM"
   - path: "raw/videos/5uTpUYw8Of4.md"
-    sha: "28d4ad9d897252a7"
+    sha: "6c5d92812de0f5b1"
 related:
   - "[[index]]"
 status: stable

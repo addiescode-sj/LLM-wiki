@@ -35,6 +35,18 @@
                             pages_created: 0 | pages_updated: 1
                             notes: 동일 영상 재인입 — 디제스트 내용 기존 페이지에 모두 반영됨, sources.sha 갱신
 [2026-05-28 15:30] [INDEX]  wiki/index.md last_updated 갱신
+[2026-05-28 16:00] [INGEST] source: raw/videos/5uTpUYw8Of4.md
+                            → targets: wiki/llm-wiki-pattern.md
+                            sha: 28d4ad9d897252a7 (unchanged)
+                            pages_created: 0 | pages_updated: 1
+                            notes: idempotent re-ingest — content already reflected; last_updated refresh only
+[2026-05-28 16:00] [INDEX]  wiki/index.md last_updated 갱신
+[2026-05-28 17:00] [INGEST] source: raw/videos/5uTpUYw8Of4.md
+                            → targets: wiki/llm-wiki-pattern.md
+                            sha: 6c5d92812de0f5b1 (prev: 28d4ad9d897252a7)
+                            pages_created: 0 | pages_updated: 1
+                            notes: idempotent re-ingest — content already reflected; sources.sha refreshed only
+[2026-05-28 17:00] [INDEX]  wiki/index.md last_updated 갱신
 [2026-05-28 15:12] [INGEST] source: /Users/addie.lee/work/LLM-wiki/raw/videos/5uTpUYw8Of4.md → targets: wiki/ | sha: 28d4ad9d897252a7 | digest: intermediate/videos/5uTpUYw8Of4.digest.md```
 
 ---
@@ -43,8 +55,8 @@
 
 | 항목 | 값 |
 |------|---|
-| 총 인입 횟수 | 3 |
+| 총 인입 횟수 | 4 |
 | 생성된 페이지 | 1 |
-| 업데이트된 페이지 | 2 |
+| 업데이트된 페이지 | 3 |
 | Lint 실행 | 0 |
 | 오류 발생 | 0 |
